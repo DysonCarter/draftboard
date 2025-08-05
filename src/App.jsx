@@ -13,7 +13,7 @@ function App() {
   }
     
   return (
-    <PlayerCard playerJson={MOCK_JSON}/>
+    <PlayerCard player={MOCK_JSON}/>
   )
 }
 
