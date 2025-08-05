@@ -1,13 +1,9 @@
-import { useState } from 'react'
 import './App.css'
+import PlayerCard from './components/PlayerCard'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      Let's Draft!
-    </>
+    <PlayerCard/>
   )
 }
 
