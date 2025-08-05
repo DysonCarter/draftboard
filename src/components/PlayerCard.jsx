@@ -1,7 +1,7 @@
 
-function PlayerCard() {
+function PlayerCard({playerJson}) {
     return (
-        <>Player</>
+        <>{playerJson.longName}</>
     )
 }
 
