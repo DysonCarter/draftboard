@@ -28,14 +28,8 @@ function PreDraftPage({
       filtered = filtered.filter(player => player.position === selectedPosition);
     }
 
-    // Sort by custom rank and reassign display ranks
+    // Sort by custom rank but preserve original rankings
     filtered = filtered.sort((a, b) => a.customRank - b.customRank);
-    
-    // Reassign display ranks based on filtered position
-    filtered = filtered.map((player, index) => ({
-      ...player,
-      displayRank: index + 1
-    }));
 
     setFilteredPlayers(filtered);
   }, [players, selectedPosition]);
@@ -165,7 +159,7 @@ function PreDraftPage({
                     onClick={() => handlePlayerClick(player)}
                     className="cursor-pointer"
                   >
-                    <PlayerListCard player={{...player, rank: player.displayRank, adpRank: player.displayRank}} />
+                    <PlayerListCard player={{...player, rank: player.customRank, originalAdpRank: player.adpRank}} />
                   </div>
                 </div>
               ))}
