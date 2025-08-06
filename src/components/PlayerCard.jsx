@@ -1,6 +1,6 @@
 function PlayerCard({ player }) {
   return (
-    <div className="bg-zinc-900 w-100 h-120 text-white rounded-lg text-xl flex flex-col m-2 select-none">
+    <div className="bg-zinc-900 w-100 text-white rounded-lg text-xl flex flex-col m-2 select-none">
       <div className="bg-zinc-950 p-3 w-100 text-3xl rounded-t-lg text-center"><h2>{player.longName.toUpperCase()}</h2></div>
       <img
         src={player.headshot}
@@ -11,9 +11,25 @@ function PlayerCard({ player }) {
         }}
         className="w-100 h-72"
       ></img>
-      <div className="bg-zinc-950 flex-1 rounded-b-lg p-7 h-auto">
-        <h3>{player.team}</h3>
-        <h3>{player.position}</h3>
+      <div className="bg-zinc-950 flex-1 rounded-b-lg p-4 h-auto">
+        <div className="flex justify-between items-center">
+          <div className="text-center">
+            <div className="text-xs text-gray-400">TEAM</div>
+            <div className="text-lg font-bold">{player.team}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-gray-400">RANK</div>
+            <div className="text-lg">#{player.rank || player.adpRank}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-gray-400">POS</div>
+            <div className="text-lg">{player.position}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-gray-400">POS RANK</div>
+            <div className="text-lg">#{player.posRank}</div>
+          </div>
+        </div>
       </div>
     </div>
   );
