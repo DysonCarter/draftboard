@@ -1,9 +1,14 @@
+import { getTeamColorStyle, getPositionColorStyle } from '../utils/colors';
+
 function PlayerListCard({ player }) {
   const currentRank = player.rank || player.adpRank;
 
   return (
     <div className="bg-zinc-900 w-full h-20 text-white rounded-lg flex items-center m-1 select-none hover:bg-zinc-800 transition-colors cursor-pointer">
-      <div className="bg-zinc-950 w-16 h-full flex items-center justify-center text-2xl font-bold rounded-l-lg">
+      <div 
+        className="w-16 h-full flex items-center justify-center text-2xl font-bold rounded-l-lg"
+        style={getTeamColorStyle(player.team)}
+      >
         {currentRank}
       </div>
       
@@ -21,8 +26,15 @@ function PlayerListCard({ player }) {
       
       <div className="flex-1 flex flex-col justify-center">
         <div className="text-lg font-semibold">{player.longName}</div>
-        <div className="text-sm text-gray-300">
-          {player.team} • {player.position}{player.posRank}
+        <div className="text-sm text-gray-300 flex items-center gap-2">
+          {player.team} • 
+          <span 
+            className="px-2 py-0.5 rounded text-white text-xs font-bold"
+            style={getPositionColorStyle(player.position)}
+          >
+            {player.position}
+          </span>
+          {player.posRank}
         </div>
       </div>
       
