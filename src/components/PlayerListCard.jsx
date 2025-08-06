@@ -25,7 +25,13 @@ function PlayerListCard({ player }) {
       </div>
       
       <div className="flex-1 flex flex-col justify-center">
-        <div className="text-lg font-semibold">{player.longName}</div>
+        <div className={`text-lg font-semibold ${
+          player.starred ? 'text-yellow-400' : 
+          player.thumbsDown ? 'text-red-400' : 
+          'text-white'
+        }`}>
+          {player.longName}
+        </div>
         <div className="text-sm text-gray-300 flex items-center gap-2">
           {player.team} • 
           <span 
