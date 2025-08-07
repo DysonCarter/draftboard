@@ -12,28 +12,11 @@ function AiSuggestions({
     const PROMPT = `
     You are an elite fantasy-football draft assistant. 
     Based on the following inputs, recommend exactly one player that maximizes the user's chances to win their league:
-    
-    • Inputs:
-      – availablePlayers [limited to the top 20 currently available players]: Array of player objects with properties:
-        * longName: full player name
-        * position: QB, RB, WR, TE, K, DST
-        * team: NFL team abbreviation
         * adpRank: average draft position ranking
         * customRank: user's personal ranking
-        * posRank: positional ranking
-        * notes: user's scouting notes (if any)
-        * starred: boolean if user marked as favorite
-        * thumbsDown: boolean if user marked negatively
-      – draftedPlayers: Array of players already on user's roster
-      – draftSettings: Object with roster requirements:
-        * qbCount, rbCount, wrCount, teCount, flexCount, kCount, dstCount, benchCount
-        * totalTeams: number of teams in the draft
-        * yourDraftSpot: user's draft position (1-indexed)
-      – selectedPlayer: Currently viewed player details
-      – picksUntilNext: Number of picks until the user drafts again (snake draft logic)
     
     • Constraints & priorities:
-    DO NOT PUT ANY VALUE IN YOUR PERSONAL RANKING. ONLY BASE THIS BASED ON THE STATS GIVEN TO YOU.
+    DO NOT PUT ANY VALUE IN YOUR PERSONAL RANKING OR NAME. ONLY BASE THIS BASED ON THE STATS GIVEN TO YOU.
       
       2. Backup QB/TE aren't important unless there's exceptional value (falling well below ADP).
       3. Favor "stack" opportunities:  
@@ -52,7 +35,6 @@ function AiSuggestions({
       availablePlayers: ${JSON.stringify(availablePlayers)}
       draftedPlayers: ${JSON.stringify(draftedPlayers)}  
       draftSettings: ${JSON.stringify(draftSettings)}
-      selectedPlayer: ${JSON.stringify(player)}
       picksUntilNext: ${picksUntilNext}
     `;
 

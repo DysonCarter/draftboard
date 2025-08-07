@@ -93,6 +93,45 @@ function DuringDraftPage({
   };
 
   const picksUntilNext = calculatePicksUntilNext();
+  
+  // Calculate picks until NEXT turn specifically for AI (never returns 0)
+  const picksUntilNextForAI = () => {
+    if (!draftSettings) return 0;
+    
+    const totalTeams = draftSettings.totalTeams;
+    const userDraftPosition = draftSettings.yourDraftSpot; // 1-indexed
+    const totalDrafted = players.filter(p => p.draftedByYou || p.draftedByOthers).length;
+    const currentRound = Math.floor(totalDrafted / totalTeams) + 1;
+    const currentPick = (totalDrafted % totalTeams) + 1;
+    
+    // Snake draft logic: odd rounds go 1->N, even rounds go N->1
+    let userPickInRound;
+    if (currentRound % 2 === 1) {
+      // Odd round: normal order
+      userPickInRound = userDraftPosition;
+    } else {
+      // Even round: reverse order
+      userPickInRound = totalTeams - userDraftPosition + 1;
+    }
+    
+    // If it's currently the user's turn, calculate next turn
+    if (currentPick === userPickInRound) {
+      const nextRound = currentRound + 1;
+      let userPickInNextRound;
+      
+      if (nextRound % 2 === 1) {
+        userPickInNextRound = userDraftPosition;
+      } else {
+        userPickInNextRound = totalTeams - userDraftPosition + 1;
+      }
+      
+      const picksLeftInRound = totalTeams - currentPick;
+      return picksLeftInRound + userPickInNextRound;
+    }
+    
+    // Otherwise return the normal calculation
+    return picksUntilNext;
+  };
 
   // Handle mouse movement for card rotation
   const handleMouseMove = (e) => {
@@ -295,7 +334,7 @@ function DuringDraftPage({
                       availablePlayers={filteredPlayers.slice(0, 20)}
                       draftedPlayers={players.filter(p => p.draftedByYou)}
                       draftSettings={draftSettings}
-                      picksUntilNext={picksUntilNext}
+                      picksUntilNext={picksUntilNextForAI()}
                     />
                   </div>
                 </div>
