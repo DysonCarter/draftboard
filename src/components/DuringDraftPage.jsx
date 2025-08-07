@@ -3,6 +3,7 @@ import PlayerListCard from './PlayerListCard';
 import PlayerCard from './PlayerCard';
 import TeamCarousel from './TeamCarousel';
 import AiSuggestions from './AiSuggestions';
+import FlipDisplay from './FlipDisplay';
 
 function DuringDraftPage({
   players,
@@ -310,12 +311,14 @@ function DuringDraftPage({
                     </div>
                   </div>
                   
-                  {/* Placeholder for future component */}
+                  {/* Flip Display Component */}
                   <div className="flex-1">
-                    <div className="bg-zinc-900 rounded-lg p-4 text-center h-32 flex flex-col justify-center">
-                      <div className="text-sm text-gray-400 mb-2 font-medium">FUTURE COMPONENT</div>
-                      <div className="text-lg text-gray-500">Coming Soon</div>
-                    </div>
+                    <FlipDisplay 
+                      availablePlayers={filteredPlayers}
+                      draftedPlayers={players.filter(p => p.draftedByYou)}
+                      draftSettings={draftSettings}
+                      picksUntilNext={picksUntilNext}
+                    />
                   </div>
                 </div>
               </div>
