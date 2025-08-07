@@ -155,9 +155,12 @@ function DraftBoardManager() {
   // Reset rankings to original ADP
   const resetRankings = () => {
     localStorage.removeItem('draftboard-rankings');
+    localStorage.removeItem('draftboard-player-marks');
     const playersWithOriginalRank = adpData.map((player, index) => ({
       ...player,
-      customRank: index + 1
+      customRank: index + 1,
+      starred: false,
+      thumbsDown: false
     }));
     // Update position ranks for the reset data
     const playersWithUpdatedPosRanks = updatePositionRanks(playersWithOriginalRank);
