@@ -12,7 +12,7 @@ export const teamColors = {
   'MIN': '#4F2683',
   'LAR': '#003594',
   'DET': '#0076B6',
-  'JAX': '#101820',
+  'JAX': '#136677',
   'ATL': '#A71930',
   'TB': '#D50A0A',
   'SEA': '#002244',
@@ -30,7 +30,7 @@ export const teamColors = {
   'ARI': '#97233F',
   'CHI': '#0B162A',
   'NYG': '#0B2265',
-  'WAS': '#773141'
+  'WSH': '#7C1415'
 };
 
 export const positionColors = {
