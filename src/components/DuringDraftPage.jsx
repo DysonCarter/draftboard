@@ -335,6 +335,7 @@ function DuringDraftPage({
                       draftedPlayers={players.filter(p => p.draftedByYou)}
                       draftSettings={draftSettings}
                       picksUntilNext={picksUntilNextForAI()}
+                      handlePlayerClick={handlePlayerClick}
                     />
                   </div>
                 </div>
