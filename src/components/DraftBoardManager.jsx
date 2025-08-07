@@ -113,6 +113,17 @@ function DraftBoardManager({ mode }) {
     savePlayerNotes(updatedPlayers);
   };
 
+  // Update player AI suggestions
+  const updatePlayerAiSuggestions = (playerId, aiSuggestions) => {
+    const updatedPlayers = players.map(player => 
+      player.playerID === playerId 
+        ? { ...player, aiSuggestions: aiSuggestions }
+        : player
+    );
+    setPlayers(updatedPlayers);
+    // Note: AI suggestions are not persisted to localStorage as they're generated content
+  };
+
   // Load draft status from localStorage
   const loadDraftStatus = () => {
     const savedDraftStatus = localStorage.getItem('draftboard-draft-status');
@@ -401,6 +412,7 @@ function DraftBoardManager({ mode }) {
           markPlayerDraftedByYou={markPlayerDraftedByYou}
           markPlayerDraftedByOthers={markPlayerDraftedByOthers}
           draftSettings={draftSettings}
+          updatePlayerAiSuggestions={updatePlayerAiSuggestions}
         />
       ) : (
         <PreDraftPage

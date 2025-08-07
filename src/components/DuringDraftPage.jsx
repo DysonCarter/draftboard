@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import PlayerListCard from './PlayerListCard';
 import PlayerCard from './PlayerCard';
 import TeamCarousel from './TeamCarousel';
+import AiSuggestions from './AiSuggestions';
 
 function DuringDraftPage({
   players,
@@ -15,7 +16,8 @@ function DuringDraftPage({
   updatePlayerNotes,
   markPlayerDraftedByYou,
   markPlayerDraftedByOthers,
-  draftSettings
+  draftSettings,
+  updatePlayerAiSuggestions
 }) {
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,6 +50,48 @@ function DuringDraftPage({
 
     setFilteredPlayers(filtered);
   }, [players, selectedPosition, searchTerm]);
+
+  // Calculate picks until next turn using snake draft logic
+  const calculatePicksUntilNext = () => {
+    if (!draftSettings) return 0;
+    
+    const totalTeams = draftSettings.totalTeams;
+    const userDraftPosition = draftSettings.yourDraftSpot; // 1-indexed
+    const totalDrafted = players.filter(p => p.draftedByYou || p.draftedByOthers).length;
+    const currentRound = Math.floor(totalDrafted / totalTeams) + 1;
+    const currentPick = (totalDrafted % totalTeams) + 1;
+    
+    // Snake draft logic: odd rounds go 1->N, even rounds go N->1
+    let userPickInRound;
+    if (currentRound % 2 === 1) {
+      // Odd round: normal order
+      userPickInRound = userDraftPosition;
+    } else {
+      // Even round: reverse order
+      userPickInRound = totalTeams - userDraftPosition + 1;
+    }
+    
+    // Calculate picks until user's next turn
+    if (currentPick <= userPickInRound) {
+      // User hasn't picked in this round yet
+      return userPickInRound - currentPick;
+    } else {
+      // User already picked this round, calculate next round
+      const picksLeftInRound = totalTeams - currentPick;
+      const nextRound = currentRound + 1;
+      let userPickInNextRound;
+      
+      if (nextRound % 2 === 1) {
+        userPickInNextRound = userDraftPosition;
+      } else {
+        userPickInNextRound = totalTeams - userDraftPosition + 1;
+      }
+      
+      return picksLeftInRound + userPickInNextRound;
+    }
+  };
+
+  const picksUntilNext = calculatePicksUntilNext();
 
   // Handle mouse movement for card rotation
   const handleMouseMove = (e) => {
@@ -195,49 +239,83 @@ function DuringDraftPage({
           
           {/* Player Card Section */}
           <div 
-            className="flex-1 flex items-start justify-center pt-2 px-4 pb-4"
+            className="flex-1 flex items-start justify-center pt-2 px-4 pb-4 overflow-y-hidden"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
           >
             {selectedPlayer ? (
-              <div className="flex gap-4 w-full max-w-4xl">
-                {/* Player card with 3D rotation */}
-                <div className="flex-shrink-0">
-                  <div 
-                    ref={cardRef}
-                    className="inline-block"
-                    style={{
-                      transform: `perspective(1000px) rotateX(${cardRotation.x}deg) rotateY(${cardRotation.y}deg)`,
-                      transformStyle: 'preserve-3d',
-                      transition: 'transform 0.1s ease-out',
-                    }}
-                  >
-                    <div
+              <div className="flex flex-col gap-2 w-full">
+                {/* Row 2: Player card, Notes and AI Suggestions */}
+                <div className="flex gap-4 w-full max-w-4xl mx-auto">
+                  {/* Player card with 3D rotation */}
+                  <div className="flex-shrink-0">
+                    <div 
+                      ref={cardRef}
+                      className="inline-block"
                       style={{
-                        transform: 'translateZ(20px)',
-                        boxShadow: `
-                          ${cardRotation.y * 2}px ${cardRotation.x * 2}px 40px rgba(0, 0, 0, 0.3),
-                          ${cardRotation.y * 1}px ${cardRotation.x * 1}px 20px rgba(0, 0, 0, 0.2)
-                        `,
-                        transition: 'box-shadow 0.1s ease-out',
+                        transform: `perspective(1000px) rotateX(${cardRotation.x}deg) rotateY(${cardRotation.y}deg)`,
+                        transformStyle: 'preserve-3d',
+                        transition: 'transform 0.1s ease-out',
                       }}
-                      className="rounded-lg [&>div]:!m-0"
                     >
-                      <PlayerCard player={{...selectedPlayer, rank: selectedPlayer.customRank}} />
+                      <div
+                        style={{
+                          transform: 'translateZ(20px)',
+                          boxShadow: `
+                            ${cardRotation.y * 2}px ${cardRotation.x * 2}px 40px rgba(0, 0, 0, 0.3),
+                            ${cardRotation.y * 1}px ${cardRotation.x * 1}px 20px rgba(0, 0, 0, 0.2)
+                          `,
+                          transition: 'box-shadow 0.1s ease-out',
+                        }}
+                        className="rounded-lg [&>div]:!m-0"
+                      >
+                        <PlayerCard player={{...selectedPlayer, rank: selectedPlayer.customRank}} />
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Notes and AI Suggestions Section */}
+                  <div className="flex-1 max-w-md space-y-4">
+                    {/* Notes Section - always visible */}
+                    <div className="bg-zinc-900 rounded-lg p-4 h-fit">
+                      <div className="text-sm text-gray-400 mb-3 font-medium">PLAYER NOTES</div>
+                      <textarea
+                        value={selectedPlayer.notes || ''}
+                        onChange={(e) => updatePlayerNotes(selectedPlayer.playerID, e.target.value)}
+                        placeholder="Add your notes about this player..."
+                        className="w-full h-32 bg-zinc-800 text-white text-sm rounded p-3 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    {/* AI Suggestions Section */}
+                    <AiSuggestions 
+                      player={selectedPlayer} 
+                      updatePlayerAiSuggestions={updatePlayerAiSuggestions}
+                      availablePlayers={filteredPlayers.slice(0, 20)}
+                      draftedPlayers={players.filter(p => p.draftedByYou)}
+                      draftSettings={draftSettings}
+                      picksUntilNext={picksUntilNext}
+                    />
                   </div>
                 </div>
 
-                {/* Notes Section - always visible */}
-                <div className="flex-1 max-w-md">
-                  <div className="bg-zinc-900 rounded-lg p-4 h-fit">
-                    <div className="text-sm text-gray-400 mb-3 font-medium">PLAYER NOTES</div>
-                    <textarea
-                      value={selectedPlayer.notes || ''}
-                      onChange={(e) => updatePlayerNotes(selectedPlayer.playerID, e.target.value)}
-                      placeholder="Add your notes about this player..."
-                      className="w-full h-32 bg-zinc-800 text-white text-sm rounded p-3 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors"
-                    />
+                {/* Row 3: Pick Countdown Box and future component */}
+                <div className="flex gap-4 w-full max-w-4xl mx-auto">
+                  <div className="w-32">
+                    <div className="bg-zinc-900 rounded-lg p-3 text-center h-32 flex flex-col justify-center">
+                      <div className="text-xs text-gray-400 mb-1 font-medium">NEXT PICK IN</div>
+                      <div className="text-2xl font-bold text-white">
+                        {picksUntilNext === 0 ? "NOW!" : picksUntilNext}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Placeholder for future component */}
+                  <div className="flex-1">
+                    <div className="bg-zinc-900 rounded-lg p-4 text-center h-32 flex flex-col justify-center">
+                      <div className="text-sm text-gray-400 mb-2 font-medium">FUTURE COMPONENT</div>
+                      <div className="text-lg text-gray-500">Coming Soon</div>
+                    </div>
                   </div>
                 </div>
               </div>
