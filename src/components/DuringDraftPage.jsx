@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import PlayerCard from './PlayerCard';
 import PlayerListCard from './PlayerListCard';
+import PlayerCard from './PlayerCard';
+import TeamCarousel from './TeamCarousel';
 
 function DuringDraftPage({
   players,
@@ -13,11 +14,12 @@ function DuringDraftPage({
   togglePlayerThumbsDown,
   updatePlayerNotes,
   markPlayerDraftedByYou,
-  markPlayerDraftedByOthers
+  markPlayerDraftedByOthers,
+  draftSettings
 }) {
   const [filteredPlayers, setFilteredPlayers] = useState([]);
-  const [cardRotation, setCardRotation] = useState({ x: 0, y: 0 });
   const [searchTerm, setSearchTerm] = useState('');
+  const [cardRotation, setCardRotation] = useState({ x: 0, y: 0 });
   const cardRef = useRef(null);
 
   // Filter players based on position, draft status, and search term
@@ -59,8 +61,9 @@ function DuringDraftPage({
     const mouseX = e.clientX - centerX;
     const mouseY = e.clientY - centerY;
     
-    const rotateX = (mouseY / (rect.height / 2)) * -15; // Max 15 degrees
-    const rotateY = (mouseX / (rect.width / 2)) * 15;   // Max 15 degrees
+    // Calculate rotation with max 15 degrees, clamped to bounds
+    const rotateX = Math.max(-15, Math.min(15, (mouseY / (rect.height / 2)) * -15));
+    const rotateY = Math.max(-15, Math.min(15, (mouseX / (rect.width / 2)) * 15));
     
     setCardRotation({ x: rotateX, y: rotateY });
   };
@@ -183,91 +186,69 @@ function DuringDraftPage({
               </div>
             )}
           </div>
+
         </div>
 
-        {/* Right Side - Player Card */}
-        <div 
-          className="w-1/2 bg-zinc-800 flex items-center justify-center p-8"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-        >
-          {selectedPlayer ? (
-            <div className="flex flex-col items-center gap-6">
-              {/* Star and Thumbs Down buttons - positioned above the card */}
-              <div className="flex gap-4">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    togglePlayerStar(selectedPlayer.playerID);
-                  }}
-                  className={`w-10 h-10 rounded-full text-lg flex items-center justify-center transition-colors shadow-lg ${
-                    selectedPlayer.starred 
-                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
-                      : 'bg-zinc-700 hover:bg-zinc-600 text-gray-300'
-                  }`}
-                >
-                  ⭐
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    togglePlayerThumbsDown(selectedPlayer.playerID);
-                  }}
-                  className={`w-10 h-10 rounded-full text-lg flex items-center justify-center transition-colors shadow-lg ${
-                    selectedPlayer.thumbsDown 
-                      ? 'bg-red-600 hover:bg-red-700 text-white' 
-                      : 'bg-zinc-700 hover:bg-zinc-600 text-gray-300'
-                  }`}
-                >
-                  👎
-                </button>
-              </div>
+        {/* Right Side - Team Carousel and Player Card */}
+        <div className="w-1/2 bg-zinc-800 flex flex-col">
+          <TeamCarousel players={players} draftSettings={draftSettings} />
+          
+          {/* Player Card Section */}
+          <div 
+            className="flex-1 flex items-start justify-center pt-2 px-4 pb-4"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+          >
+            {selectedPlayer ? (
+              <div className="flex gap-4 w-full max-w-4xl">
+                {/* Player card with 3D rotation */}
+                <div className="flex-shrink-0">
+                  <div 
+                    ref={cardRef}
+                    className="inline-block"
+                    style={{
+                      transform: `perspective(1000px) rotateX(${cardRotation.x}deg) rotateY(${cardRotation.y}deg)`,
+                      transformStyle: 'preserve-3d',
+                      transition: 'transform 0.1s ease-out',
+                    }}
+                  >
+                    <div
+                      style={{
+                        transform: 'translateZ(20px)',
+                        boxShadow: `
+                          ${cardRotation.y * 2}px ${cardRotation.x * 2}px 40px rgba(0, 0, 0, 0.3),
+                          ${cardRotation.y * 1}px ${cardRotation.x * 1}px 20px rgba(0, 0, 0, 0.2)
+                        `,
+                        transition: 'box-shadow 0.1s ease-out',
+                      }}
+                      className="rounded-lg [&>div]:!m-0"
+                    >
+                      <PlayerCard player={{...selectedPlayer, rank: selectedPlayer.customRank}} />
+                    </div>
+                  </div>
+                </div>
 
-              {/* Player card with 3D rotation */}
-              <div 
-                ref={cardRef}
-                className="inline-block"
-                style={{
-                  transform: `perspective(1000px) rotateX(${cardRotation.x}deg) rotateY(${cardRotation.y}deg)`,
-                  transformStyle: 'preserve-3d',
-                  transition: 'transform 0.1s ease-out',
-                }}
-              >
-                <div
-                  style={{
-                    transform: 'translateZ(20px)',
-                    boxShadow: `
-                      ${cardRotation.y * 2}px ${cardRotation.x * 2}px 40px rgba(0, 0, 0, 0.3),
-                      ${cardRotation.y * 1}px ${cardRotation.x * 1}px 20px rgba(0, 0, 0, 0.2)
-                    `,
-                    transition: 'box-shadow 0.1s ease-out',
-                  }}
-                  className="rounded-lg [&>div]:!m-0"
-                >
-                  <PlayerCard player={{...selectedPlayer, rank: selectedPlayer.customRank}} />
+                {/* Notes Section - always visible */}
+                <div className="flex-1 max-w-md">
+                  <div className="bg-zinc-900 rounded-lg p-4 h-fit">
+                    <div className="text-sm text-gray-400 mb-3 font-medium">PLAYER NOTES</div>
+                    <textarea
+                      value={selectedPlayer.notes || ''}
+                      onChange={(e) => updatePlayerNotes(selectedPlayer.playerID, e.target.value)}
+                      placeholder="Add your notes about this player..."
+                      className="w-full h-32 bg-zinc-800 text-white text-sm rounded p-3 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors"
+                    />
+                  </div>
                 </div>
               </div>
-
-              {/* Notes Section */}
-              <div className="w-full max-w-md">
-                <div className="bg-zinc-900 rounded-lg p-4">
-                  <div className="text-sm text-gray-400 mb-3 font-medium">PLAYER NOTES</div>
-                  <textarea
-                    value={selectedPlayer.notes || ''}
-                    onChange={(e) => updatePlayerNotes(selectedPlayer.playerID, e.target.value)}
-                    placeholder="Add your notes about this player..."
-                    className="w-full h-24 bg-zinc-800 text-white text-sm rounded p-3 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors"
-                  />
-                </div>
+            ) : (
+              <div className="text-center text-gray-400">
+                <div className="text-6xl mb-4">🏈</div>
+                <h3 className="text-xl font-semibold mb-2">Select a Player</h3>
+                <p>Click on any player from the list to view their details</p>
               </div>
-            </div>
-          ) : (
-            <div className="text-center text-gray-400">
-              <div className="text-6xl mb-4">🏈</div>
-              <h3 className="text-xl font-semibold mb-2">Select a Player</h3>
-              <p>Click on any player from the list to view their details</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

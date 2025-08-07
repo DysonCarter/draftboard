@@ -400,6 +400,7 @@ function DraftBoardManager({ mode }) {
           updatePlayerNotes={updatePlayerNotes}
           markPlayerDraftedByYou={markPlayerDraftedByYou}
           markPlayerDraftedByOthers={markPlayerDraftedByOthers}
+          draftSettings={draftSettings}
         />
       ) : (
         <PreDraftPage
