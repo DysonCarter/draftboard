@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import PreDraftPage from './PreDraftPage';
+import DuringDraftPage from './DuringDraftPage';
 import adpData from '../data/adp_enriched.json';
 
 function DraftBoardManager() {
   const [players, setPlayers] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState('ALL');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [isDuringDraft, setIsDuringDraft] = useState(false);
 
   // Available positions for filtering
   const positions = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
@@ -97,6 +99,56 @@ function DraftBoardManager() {
     savePlayerNotes(updatedPlayers);
   };
 
+  // Load draft status from localStorage
+  const loadDraftStatus = () => {
+    const savedDraftStatus = localStorage.getItem('draftboard-draft-status');
+    if (savedDraftStatus) {
+      try {
+        return JSON.parse(savedDraftStatus);
+      } catch (e) {
+        console.error('Error parsing saved draft status:', e);
+        return {};
+      }
+    }
+    return {};
+  };
+
+  // Save draft status to localStorage
+  const saveDraftStatus = (players) => {
+    const draftStatus = {};
+    players.forEach(player => {
+      if (player.draftedByYou || player.draftedByOthers) {
+        draftStatus[player.playerID] = {
+          draftedByYou: player.draftedByYou || false,
+          draftedByOthers: player.draftedByOthers || false
+        };
+      }
+    });
+    localStorage.setItem('draftboard-draft-status', JSON.stringify(draftStatus));
+  };
+
+  // Mark player as drafted by you
+  const markPlayerDraftedByYou = (playerId) => {
+    const updatedPlayers = players.map(player => 
+      player.playerID === playerId 
+        ? { ...player, draftedByYou: true, draftedByOthers: false }
+        : player
+    );
+    setPlayers(updatedPlayers);
+    saveDraftStatus(updatedPlayers);
+  };
+
+  // Mark player as drafted by others
+  const markPlayerDraftedByOthers = (playerId) => {
+    const updatedPlayers = players.map(player => 
+      player.playerID === playerId 
+        ? { ...player, draftedByOthers: true, draftedByYou: false }
+        : player
+    );
+    setPlayers(updatedPlayers);
+    saveDraftStatus(updatedPlayers);
+  };
+
   // Update position ranks for all players
   const updatePositionRanks = (updatedPlayers) => {
     // Group players by position and sort by custom rank
@@ -125,6 +177,7 @@ function DraftBoardManager() {
     const savedRankings = loadRankings();
     const savedMarks = loadPlayerMarks();
     const savedNotes = loadPlayerNotes();
+    const savedDraftStatus = loadDraftStatus();
     
     // Add a custom rank and marks that users can modify
     const playersWithCustomRank = adpData.map((player, index) => ({
@@ -132,7 +185,9 @@ function DraftBoardManager() {
       customRank: savedRankings[player.playerID] || (index + 1),
       starred: savedMarks[player.playerID]?.starred || false,
       thumbsDown: savedMarks[player.playerID]?.thumbsDown || false,
-      notes: savedNotes[player.playerID] || ''
+      notes: savedNotes[player.playerID] || '',
+      draftedByYou: savedDraftStatus[player.playerID]?.draftedByYou || false,
+      draftedByOthers: savedDraftStatus[player.playerID]?.draftedByOthers || false
     }));
     
     // Update position ranks for initial data
@@ -195,12 +250,15 @@ function DraftBoardManager() {
     localStorage.removeItem('draftboard-rankings');
     localStorage.removeItem('draftboard-player-marks');
     localStorage.removeItem('draftboard-player-notes');
+    localStorage.removeItem('draftboard-draft-status');
     const playersWithOriginalRank = adpData.map((player, index) => ({
       ...player,
       customRank: index + 1,
       starred: false,
       thumbsDown: false,
-      notes: ''
+      notes: '',
+      draftedByYou: false,
+      draftedByOthers: false
     }));
     // Update position ranks for the reset data
     const playersWithUpdatedPosRanks = updatePositionRanks(playersWithOriginalRank);
@@ -245,20 +303,59 @@ function DraftBoardManager() {
   }, [players, selectedPlayer]);
 
   return (
-    <PreDraftPage
-      players={players}
-      selectedPosition={selectedPosition}
-      setSelectedPosition={setSelectedPosition}
-      selectedPlayer={selectedPlayer}
-      positions={positions}
-      movePlayerUp={movePlayerUp}
-      movePlayerDown={movePlayerDown}
-      resetRankings={resetRankings}
-      handlePlayerClick={handlePlayerClick}
-      togglePlayerStar={togglePlayerStar}
-      togglePlayerThumbsDown={togglePlayerThumbsDown}
-      updatePlayerNotes={updatePlayerNotes}
-    />
+    <div>
+      {!isDuringDraft && (
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => {
+              // Clear draft status when starting a new draft
+              localStorage.removeItem('draftboard-draft-status');
+              const clearedPlayers = players.map(player => ({
+                ...player,
+                draftedByYou: false,
+                draftedByOthers: false
+              }));
+              setPlayers(clearedPlayers);
+              setIsDuringDraft(true);
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+          >
+            Start Draft
+          </button>
+        </div>
+      )}
+
+      {isDuringDraft ? (
+        <DuringDraftPage
+          players={players}
+          selectedPosition={selectedPosition}
+          setSelectedPosition={setSelectedPosition}
+          selectedPlayer={selectedPlayer}
+          positions={positions}
+          handlePlayerClick={handlePlayerClick}
+          togglePlayerStar={togglePlayerStar}
+          togglePlayerThumbsDown={togglePlayerThumbsDown}
+          updatePlayerNotes={updatePlayerNotes}
+          markPlayerDraftedByYou={markPlayerDraftedByYou}
+          markPlayerDraftedByOthers={markPlayerDraftedByOthers}
+        />
+      ) : (
+        <PreDraftPage
+          players={players}
+          selectedPosition={selectedPosition}
+          setSelectedPosition={setSelectedPosition}
+          selectedPlayer={selectedPlayer}
+          positions={positions}
+          movePlayerUp={movePlayerUp}
+          movePlayerDown={movePlayerDown}
+          resetRankings={resetRankings}
+          handlePlayerClick={handlePlayerClick}
+          togglePlayerStar={togglePlayerStar}
+          togglePlayerThumbsDown={togglePlayerThumbsDown}
+          updatePlayerNotes={updatePlayerNotes}
+        />
+      )}
+    </div>
   );
 }
 
