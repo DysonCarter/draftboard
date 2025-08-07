@@ -61,6 +61,42 @@ function DraftBoardManager() {
     localStorage.setItem('draftboard-player-marks', JSON.stringify(marks));
   };
 
+  // Load player notes from localStorage
+  const loadPlayerNotes = () => {
+    const savedNotes = localStorage.getItem('draftboard-player-notes');
+    if (savedNotes) {
+      try {
+        return JSON.parse(savedNotes);
+      } catch (e) {
+        console.error('Error parsing saved player notes:', e);
+        return {};
+      }
+    }
+    return {};
+  };
+
+  // Save player notes to localStorage
+  const savePlayerNotes = (players) => {
+    const notes = {};
+    players.forEach(player => {
+      if (player.notes && player.notes.trim()) {
+        notes[player.playerID] = player.notes;
+      }
+    });
+    localStorage.setItem('draftboard-player-notes', JSON.stringify(notes));
+  };
+
+  // Update player notes
+  const updatePlayerNotes = (playerId, notes) => {
+    const updatedPlayers = players.map(player => 
+      player.playerID === playerId 
+        ? { ...player, notes: notes }
+        : player
+    );
+    setPlayers(updatedPlayers);
+    savePlayerNotes(updatedPlayers);
+  };
+
   // Update position ranks for all players
   const updatePositionRanks = (updatedPlayers) => {
     // Group players by position and sort by custom rank
@@ -88,13 +124,15 @@ function DraftBoardManager() {
   useEffect(() => {
     const savedRankings = loadRankings();
     const savedMarks = loadPlayerMarks();
+    const savedNotes = loadPlayerNotes();
     
     // Add a custom rank and marks that users can modify
     const playersWithCustomRank = adpData.map((player, index) => ({
       ...player,
       customRank: savedRankings[player.playerID] || (index + 1),
       starred: savedMarks[player.playerID]?.starred || false,
-      thumbsDown: savedMarks[player.playerID]?.thumbsDown || false
+      thumbsDown: savedMarks[player.playerID]?.thumbsDown || false,
+      notes: savedNotes[player.playerID] || ''
     }));
     
     // Update position ranks for initial data
@@ -156,11 +194,13 @@ function DraftBoardManager() {
   const resetRankings = () => {
     localStorage.removeItem('draftboard-rankings');
     localStorage.removeItem('draftboard-player-marks');
+    localStorage.removeItem('draftboard-player-notes');
     const playersWithOriginalRank = adpData.map((player, index) => ({
       ...player,
       customRank: index + 1,
       starred: false,
-      thumbsDown: false
+      thumbsDown: false,
+      notes: ''
     }));
     // Update position ranks for the reset data
     const playersWithUpdatedPosRanks = updatePositionRanks(playersWithOriginalRank);
@@ -217,6 +257,7 @@ function DraftBoardManager() {
       handlePlayerClick={handlePlayerClick}
       togglePlayerStar={togglePlayerStar}
       togglePlayerThumbsDown={togglePlayerThumbsDown}
+      updatePlayerNotes={updatePlayerNotes}
     />
   );
 }

@@ -13,7 +13,8 @@ function PreDraftPage({
   resetRankings,
   handlePlayerClick,
   togglePlayerStar,
-  togglePlayerThumbsDown
+  togglePlayerThumbsDown,
+  updatePlayerNotes
 }) {
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [cardRotation, setCardRotation] = useState({ x: 0, y: 0 });
@@ -233,6 +234,19 @@ function PreDraftPage({
                   className="rounded-lg [&>div]:!m-0"
                 >
                   <PlayerCard player={{...selectedPlayer, rank: selectedPlayer.customRank}} />
+                </div>
+              </div>
+
+              {/* Notes Section */}
+              <div className="w-full max-w-md">
+                <div className="bg-zinc-900 rounded-lg p-4">
+                  <div className="text-sm text-gray-400 mb-3 font-medium">PLAYER NOTES</div>
+                  <textarea
+                    value={selectedPlayer.notes || ''}
+                    onChange={(e) => updatePlayerNotes(selectedPlayer.playerID, e.target.value)}
+                    placeholder="Add your notes about this player..."
+                    className="w-full h-24 bg-zinc-800 text-white text-sm rounded p-3 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors"
+                  />
                 </div>
               </div>
             </div>
