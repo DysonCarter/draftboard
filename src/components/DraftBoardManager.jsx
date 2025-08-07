@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PreDraftPage from './PreDraftPage';
 import DuringDraftPage from './DuringDraftPage';
 import adpData from '../data/adp_enriched.json';
 
-function DraftBoardManager() {
+function DraftBoardManager({ mode }) {
   const [players, setPlayers] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState('ALL');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [isDuringDraft, setIsDuringDraft] = useState(false);
+  const navigate = useNavigate();
+  const isDuringDraft = mode === 'during-draft';
 
   // Available positions for filtering
   const positions = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST'];
@@ -316,7 +318,7 @@ function DraftBoardManager() {
                 draftedByOthers: false
               }));
               setPlayers(clearedPlayers);
-              setIsDuringDraft(true);
+              navigate('/during-draft');
             }}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
           >
