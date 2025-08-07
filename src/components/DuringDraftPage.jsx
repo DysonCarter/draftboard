@@ -17,9 +17,10 @@ function DuringDraftPage({
 }) {
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [cardRotation, setCardRotation] = useState({ x: 0, y: 0 });
+  const [searchTerm, setSearchTerm] = useState('');
   const cardRef = useRef(null);
 
-  // Filter players based on position and draft status
+  // Filter players based on position, draft status, and search term
   useEffect(() => {
     let filtered = players;
 
@@ -31,11 +32,20 @@ function DuringDraftPage({
       filtered = filtered.filter(player => player.position === selectedPosition);
     }
 
+    // Filter by search term (name or team)
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(player => 
+        player.longName.toLowerCase().includes(searchLower) ||
+        player.team.toLowerCase().includes(searchLower)
+      );
+    }
+
     // Sort by custom rank but preserve original rankings
     filtered = filtered.sort((a, b) => a.customRank - b.customRank);
 
     setFilteredPlayers(filtered);
-  }, [players, selectedPosition]);
+  }, [players, selectedPosition, searchTerm]);
 
   // Handle mouse movement for card rotation
   const handleMouseMove = (e) => {
@@ -67,8 +77,8 @@ function DuringDraftPage({
         <div className="w-1/2 border-r border-zinc-800 flex flex-col">
           {/* Controls */}
           <div className="bg-zinc-900 p-3 border-b border-zinc-800">
-            {/* Position Filter */}
-            <div className="flex justify-center items-center">
+            {/* Position Filter and Search Bar */}
+            <div className="flex items-center gap-4">
               <div className="flex gap-2 flex-wrap">
                 {positions.map(position => (
                   <button
@@ -84,6 +94,14 @@ function DuringDraftPage({
                   </button>
                 ))}
               </div>
+              
+              <input
+                type="text"
+                placeholder="Search players..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-3 py-1 bg-zinc-800 text-white rounded-lg border border-zinc-700 focus:border-blue-500 focus:outline-none text-sm"
+              />
             </div>
           </div>
 
