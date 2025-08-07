@@ -1,11 +1,16 @@
-import { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { getTeamColorStyle, getPositionColorStyle } from '../utils/colors';
 
 function TeamCarousel({ players, draftSettings }) {
+  // Ref for scrollable container
+  const scrollRef = useRef(null);
+  
+  // State to track scroll direction (1 for forward, -1 for backward)
+  const [scrollDirection, setScrollDirection] = useState(1);
+
   // Calculate total roster spots based on draft settings
   const totalRosterSpots = useMemo(() => {
     if (!draftSettings) return 15; // default fallback
-    
     return (
       draftSettings.qbCount +
       draftSettings.rbCount +
@@ -19,17 +24,13 @@ function TeamCarousel({ players, draftSettings }) {
   }, [draftSettings]);
 
   // Get drafted players by you
-  const draftedPlayers = useMemo(() => {
-    return players.filter(player => player.draftedByYou);
-  }, [players]);
+  const draftedPlayers = useMemo(() => players.filter(player => player.draftedByYou), [players]);
 
   // Create position-based roster slots
   const rosterSlots = useMemo(() => {
     if (!draftSettings) return [];
-    
+
     const slots = [];
-    
-    // Define position groups in order
     const positionGroups = [
       { position: 'QB', count: draftSettings.qbCount },
       { position: 'RB', count: draftSettings.rbCount },
@@ -40,41 +41,34 @@ function TeamCarousel({ players, draftSettings }) {
       { position: 'DST', count: draftSettings.dstCount },
       { position: 'BENCH', count: draftSettings.benchCount }
     ];
-    
-    // Create slots for each position group
+
     positionGroups.forEach(group => {
       if (group.count > 0) {
-        // Get drafted players for this position (or any position for FLEX/BENCH)
         let playersForPosition;
         if (group.position === 'FLEX') {
-          // FLEX can be RB, WR, or TE
           playersForPosition = draftedPlayers.filter(player => 
             ['RB', 'WR', 'TE'].includes(player.position) && !player.assigned
           );
         } else if (group.position === 'BENCH') {
-          // BENCH can be any position
           playersForPosition = draftedPlayers.filter(player => !player.assigned);
         } else {
-          // Regular position matching
           playersForPosition = draftedPlayers.filter(player => 
             player.position === group.position && !player.assigned
           );
         }
-        
-        // Create slots for this position
+
         for (let i = 0; i < group.count; i++) {
           if (i < playersForPosition.length) {
-            // Mark player as assigned to avoid double-placement
             playersForPosition[i].assigned = true;
-            slots.push({ 
-              type: 'player', 
+            slots.push({
+              type: 'player',
               player: playersForPosition[i],
               slotPosition: group.position,
               slotIndex: i + 1
             });
           } else {
-            slots.push({ 
-              type: 'empty', 
+            slots.push({
+              type: 'empty',
               id: `${group.position}-${i + 1}`,
               slotPosition: group.position,
               slotIndex: i + 1
@@ -83,14 +77,45 @@ function TeamCarousel({ players, draftSettings }) {
         }
       }
     });
-    
-    // Reset assigned flags for next render
+
+    // Reset assigned flags
     draftedPlayers.forEach(player => {
       delete player.assigned;
     });
-    
+
     return slots;
   }, [draftedPlayers, draftSettings]);
+
+  // Auto-scroll effect
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    const scrollSpeed = 1; // pixels per interval
+    const intervalMs = 30; // interval in milliseconds
+
+    const scrollInterval = setInterval(() => {
+      // Only scroll if overflow exists
+      if (scrollContainer.scrollWidth <= scrollContainer.clientWidth) return;
+
+      const maxScrollLeft = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+      const currentScrollLeft = scrollContainer.scrollLeft;
+
+      // Check if we've reached the end (going forward)
+      if (scrollDirection === 1 && currentScrollLeft >= maxScrollLeft) {
+        setScrollDirection(-1); // Reverse direction
+      }
+      // Check if we've reached the beginning (going backward)
+      else if (scrollDirection === -1 && currentScrollLeft <= 0) {
+        setScrollDirection(1); // Forward direction
+      }
+
+      // Apply scroll movement based on current direction
+      scrollContainer.scrollLeft += scrollSpeed * scrollDirection;
+    }, intervalMs);
+
+    return () => clearInterval(scrollInterval);
+  }, [rosterSlots, scrollDirection]);
 
   return (
     <div className="bg-zinc-900 border-b border-zinc-800 p-3">
@@ -99,14 +124,23 @@ function TeamCarousel({ players, draftSettings }) {
           Your Team ({draftedPlayers.length}/{totalRosterSpots})
         </div>
       </div>
-      
-      <div className="flex gap-3 overflow-x-auto pb-1">
-        {rosterSlots.map((slot, index) => (
-          <div key={slot.type === 'player' ? slot.player.playerID : slot.id} className="flex-shrink-0">
+
+      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide" ref={scrollRef}>
+        {rosterSlots.map((slot) => (
+          <div
+            key={slot.type === 'player' ? slot.player.playerID : slot.id}
+            className="flex-shrink-0"
+          >
             {slot.type === 'player' ? (
-              <PlayerMiniCard player={slot.player} slotPosition={slot.slotPosition} />
+              <PlayerMiniCard
+                player={slot.player}
+                slotPosition={slot.slotPosition}
+              />
             ) : (
-              <EmptySlot position={slot.slotPosition} slotIndex={slot.slotIndex} />
+              <EmptySlot
+                position={slot.slotPosition}
+                slotIndex={slot.slotIndex}
+              />
             )}
           </div>
         ))}
@@ -123,11 +157,11 @@ function PlayerMiniCard({ player, slotPosition }) {
           {slotPosition}
         </div>
       )}
-      <div 
-        className="p-2 w-full text-xs rounded-t-lg text-center font-bold" 
+      <div
+        className="rounded-t-lg p-2 text-center"
         style={getTeamColorStyle(player.team)}
       >
-        <h3 className="truncate">{player.longName.toUpperCase()}</h3>
+        <h3 className="truncate font-bold">{player.longName.toUpperCase()}</h3>
       </div>
       <div className="w-full h-20 overflow-hidden">
         <img
@@ -153,7 +187,7 @@ function PlayerMiniCard({ player, slotPosition }) {
           <div className="text-center">
             <div className="text-gray-400">POS</div>
             <div className="relative">
-              <span 
+              <span
                 className="font-bold text-white px-1 rounded text-[9px]"
                 style={getPositionColorStyle(player.position)}
               >
