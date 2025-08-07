@@ -14,10 +14,13 @@ function PreDraftPage({
   handlePlayerClick,
   togglePlayerStar,
   togglePlayerThumbsDown,
-  updatePlayerNotes
+  updatePlayerNotes,
+  draftSettings,
+  updateDraftSettings
 }) {
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [cardRotation, setCardRotation] = useState({ x: 0, y: 0 });
+  const [showSettings, setShowSettings] = useState(false);
   const cardRef = useRef(null);
 
   // Filter players based on position
@@ -65,7 +68,184 @@ function PreDraftPage({
 
 
   return (
-    <div className="min-h-screen w-screen bg-zinc-950 text-white overflow-x-hidden">
+    <div className="min-h-screen w-screen bg-zinc-950 text-white overflow-x-hidden relative">
+      {/* Settings Button */}
+      <div className="fixed top-4 right-36 z-50">
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="px-4 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg font-medium transition-colors"
+        >
+          Settings
+        </button>
+      </div>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="fixed top-16 right-4 z-50 w-80 bg-zinc-800 rounded-lg p-4 shadow-xl border border-zinc-700">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm text-zinc-300 font-medium">DRAFT SETTINGS</div>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="text-zinc-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            {/* Starting Lineup */}
+            <div className="text-xs text-zinc-400 uppercase tracking-wide">Starting Lineup</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">QB</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="3"
+                  value={draftSettings.qbCount}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    qbCount: parseInt(e.target.value) || 0
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">RB</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="5"
+                  value={draftSettings.rbCount}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    rbCount: parseInt(e.target.value) || 0
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">WR</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="5"
+                  value={draftSettings.wrCount}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    wrCount: parseInt(e.target.value) || 0
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">TE</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="3"
+                  value={draftSettings.teCount}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    teCount: parseInt(e.target.value) || 0
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">FLEX</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="3"
+                  value={draftSettings.flexCount}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    flexCount: parseInt(e.target.value) || 0
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">K</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="2"
+                  value={draftSettings.kCount}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    kCount: parseInt(e.target.value) || 0
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">DST</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="2"
+                  value={draftSettings.dstCount}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    dstCount: parseInt(e.target.value) || 0
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Bench and Draft Info */}
+            <div className="text-xs text-zinc-400 uppercase tracking-wide">Draft Info</div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Bench Spots</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="15"
+                  value={draftSettings.benchCount}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    benchCount: parseInt(e.target.value) || 0
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Total Teams</label>
+                <input
+                  type="number"
+                  min="4"
+                  max="20"
+                  value={draftSettings.totalTeams}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    totalTeams: parseInt(e.target.value) || 10
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Your Draft Position</label>
+                <input
+                  type="number"
+                  min="1"
+                  max={draftSettings.totalTeams}
+                  value={draftSettings.yourDraftSpot}
+                  onChange={(e) => updateDraftSettings({
+                    ...draftSettings,
+                    yourDraftSpot: Math.min(parseInt(e.target.value) || 1, draftSettings.totalTeams)
+                  })}
+                  className="w-full px-2 py-1 bg-zinc-700 text-white rounded text-sm border border-zinc-600 focus:border-zinc-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex h-screen w-full">
         {/* Left Side - Player List */}
         <div className="w-1/2 border-r border-zinc-800 flex flex-col">

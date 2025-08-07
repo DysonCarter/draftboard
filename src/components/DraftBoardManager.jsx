@@ -8,6 +8,18 @@ function DraftBoardManager({ mode }) {
   const [players, setPlayers] = useState([]);
   const [selectedPosition, setSelectedPosition] = useState('ALL');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [draftSettings, setDraftSettings] = useState({
+    qbCount: 1,
+    rbCount: 2,
+    wrCount: 2,
+    teCount: 1,
+    flexCount: 1,
+    kCount: 1,
+    dstCount: 1,
+    benchCount: 6,
+    totalTeams: 12,
+    yourDraftSpot: 1
+  });
   const navigate = useNavigate();
   const isDuringDraft = mode === 'during-draft';
 
@@ -151,6 +163,31 @@ function DraftBoardManager({ mode }) {
     saveDraftStatus(updatedPlayers);
   };
 
+  // Load draft settings from localStorage
+  const loadDraftSettings = () => {
+    const savedSettings = localStorage.getItem('draftboard-draft-settings');
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings);
+      } catch (e) {
+        console.error('Error parsing saved draft settings:', e);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  // Save draft settings to localStorage
+  const saveDraftSettings = (settings) => {
+    localStorage.setItem('draftboard-draft-settings', JSON.stringify(settings));
+  };
+
+  // Update draft settings
+  const updateDraftSettings = (newSettings) => {
+    setDraftSettings(newSettings);
+    saveDraftSettings(newSettings);
+  };
+
   // Update position ranks for all players
   const updatePositionRanks = (updatedPlayers) => {
     // Group players by position and sort by custom rank
@@ -174,12 +211,18 @@ function DraftBoardManager({ mode }) {
     return updatedPlayers;
   };
 
-  // Initialize players data
+  // Initialize players data and settings
   useEffect(() => {
     const savedRankings = loadRankings();
     const savedMarks = loadPlayerMarks();
     const savedNotes = loadPlayerNotes();
     const savedDraftStatus = loadDraftStatus();
+    const savedSettings = loadDraftSettings();
+    
+    // Load saved settings if they exist
+    if (savedSettings) {
+      setDraftSettings(savedSettings);
+    }
     
     // Add a custom rank and marks that users can modify
     const playersWithCustomRank = adpData.map((player, index) => ({
@@ -253,6 +296,23 @@ function DraftBoardManager({ mode }) {
     localStorage.removeItem('draftboard-player-marks');
     localStorage.removeItem('draftboard-player-notes');
     localStorage.removeItem('draftboard-draft-status');
+    localStorage.removeItem('draftboard-draft-settings');
+    
+    // Reset settings to defaults
+    const defaultSettings = {
+      qbCount: 1,
+      rbCount: 2,
+      wrCount: 2,
+      teCount: 1,
+      flexCount: 1,
+      kCount: 1,
+      dstCount: 1,
+      benchCount: 6,
+      totalTeams: 12,
+      yourDraftSpot: 1
+    };
+    setDraftSettings(defaultSettings);
+    
     const playersWithOriginalRank = adpData.map((player, index) => ({
       ...player,
       customRank: index + 1,
@@ -320,7 +380,7 @@ function DraftBoardManager({ mode }) {
               setPlayers(clearedPlayers);
               navigate('/during-draft');
             }}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg font-medium transition-colors"
           >
             Start Draft
           </button>
@@ -355,6 +415,8 @@ function DraftBoardManager({ mode }) {
           togglePlayerStar={togglePlayerStar}
           togglePlayerThumbsDown={togglePlayerThumbsDown}
           updatePlayerNotes={updatePlayerNotes}
+          draftSettings={draftSettings}
+          updateDraftSettings={updateDraftSettings}
         />
       )}
     </div>
