@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import PlayerCard from './PlayerCard';
 import PlayerListCard from './PlayerListCard';
+import { exportRankings, importRankings, mergeImportedRankings } from '../utils/saveSystem';
 
 function PreDraftPage({
   players,
+  setPlayers,
   selectedPosition,
   setSelectedPosition,
   selectedPlayer,
@@ -21,7 +23,9 @@ function PreDraftPage({
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [cardRotation, setCardRotation] = useState({ x: 0, y: 0 });
   const [showSettings, setShowSettings] = useState(false);
+  const [notification, setNotification] = useState(null);
   const cardRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Filter players based on position
   useEffect(() => {
@@ -65,10 +69,67 @@ function PreDraftPage({
     setCardRotation({ x: 0, y: 0 });
   };
 
+  // Show notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
+  // Export rankings to file
+  const handleExportRankings = () => {
+    const result = exportRankings(players);
+    showNotification(result.message, result.success ? 'success' : 'error');
+  };
+
+  // Import rankings from file
+  const handleImportRankings = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const result = await importRankings(file);
+      const mergeResult = mergeImportedRankings(players, result.data);
+      
+      if (mergeResult.success) {
+        setPlayers(mergeResult.players);
+        showNotification(
+          `Successfully imported! Updated ${mergeResult.stats.matched} of ${mergeResult.stats.total} players.`,
+          'success'
+        );
+      } else {
+        showNotification(mergeResult.message, 'error');
+      }
+    } catch (error) {
+      showNotification(error.message, 'error');
+    }
+
+    // Reset file input
+    event.target.value = '';
+  };
 
   return (
     <div className="min-h-screen w-screen bg-zinc-950 text-white overflow-x-hidden relative">
+      {/* Hidden file input for import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleFileSelected}
+        style={{ display: 'none' }}
+      />
+
+      {/* Notification */}
+      {notification && (
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-white text-sm font-medium ${
+          notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        }`}>
+          {notification.message}
+        </div>
+      )}
       {/* Settings Button */}
       <div className="fixed top-4 right-36 z-50">
         <button
@@ -251,7 +312,7 @@ function PreDraftPage({
         <div className="w-1/2 border-r border-zinc-800 flex flex-col">
           {/* Controls */}
           <div className="bg-zinc-900 p-3 border-b border-zinc-800">
-            {/* Position Filter and Reset Button */}
+            {/* Position Filter and Controls */}
             <div className="flex justify-between items-center">
               <div className="flex gap-2 flex-wrap">
                 {positions.map(position => (
@@ -269,12 +330,26 @@ function PreDraftPage({
                 ))}
               </div>
               
-              <button
-                onClick={resetRankings}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
-              >
-                Reset Rankings
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportRankings}
+                  className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded text-sm transition-colors"
+                >
+                  Export
+                </button>
+                <button
+                  onClick={handleImportRankings}
+                  className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-white rounded text-sm transition-colors"
+                >
+                  Import
+                </button>
+                <button
+                  onClick={resetRankings}
+                  className="px-3 py-1 bg-zinc-700 hover:bg-zinc-600 text-red-400 hover:text-red-300 rounded text-sm transition-colors"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
 

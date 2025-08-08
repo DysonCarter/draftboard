@@ -417,6 +417,7 @@ function DraftBoardManager({ mode }) {
       ) : (
         <PreDraftPage
           players={players}
+          setPlayers={setPlayers}
           selectedPosition={selectedPosition}
           setSelectedPosition={setSelectedPosition}
           selectedPlayer={selectedPlayer}
