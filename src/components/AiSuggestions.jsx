@@ -174,29 +174,29 @@ Let lower ranks be better. Normalize ranks to z-ish scores against the *availabl
 
 
   return (
-    <div className="bg-zinc-900 rounded-lg p-4 h-fit">
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-sm text-gray-400 font-medium">AI SUGGESTIONS</div>
+    <div className="bg-zinc-900 rounded-lg p-3 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-1 flex-shrink-0">
+        <div className="text-xs text-green-400 font-mono">AI</div>
         <button
           onClick={handleGenerateAI}
           disabled={isLoading}
-          className={`p-2 border rounded transition-all flex items-center justify-center ${
+          className={`p-1 border rounded text-xs transition-all flex items-center justify-center ${
             isLoading 
               ? 'bg-zinc-600 text-gray-400 border-gray-600 cursor-not-allowed' 
-              : 'bg-zinc-700 hover:bg-zinc-600 text-green-400 hover:text-green-300 border-green-400/30 hover:border-green-300/50'
+              : 'bg-black hover:bg-zinc-800 text-green-400 hover:text-green-300 border-green-400/30 hover:border-green-300/50'
           }`}
           title={isLoading ? "Generating AI recommendation..." : "Generate AI Recommendation"}
         >
           {isLoading ? (
             <div className="animate-spin">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 12a9 9 0 11-6.219-8.56"/>
               </svg>
             </div>
           ) : (
             <svg 
-              width="16" 
-              height="16" 
+              width="10" 
+              height="10" 
               viewBox="0 0 24 24" 
               fill="none" 
               stroke="currentColor" 
@@ -213,12 +213,27 @@ Let lower ranks be better. Normalize ranks to z-ish scores against the *availabl
           )}
         </button>
       </div>
-      <textarea
-        value={player?.aiSuggestions || ''}
-        onChange={(e) => updatePlayerAiSuggestions(player.playerID, e.target.value)}
-        placeholder={isLoading ? "Generating AI recommendation..." : "AI analysis and suggestions will appear here..."}
-        className="w-full h-32 bg-zinc-800 text-white text-sm rounded p-3 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors"
-      />
+      
+      {/* Terminal-style output */}
+      <div className="bg-black rounded border border-green-400/20 p-3 flex-1 overflow-y-auto min-h-0">
+        <div className="text-green-400 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+          {isLoading ? (
+            <div className="flex items-center">
+              <span className="animate-pulse">$ analyzing_draft_data...</span>
+              <span className="ml-1 w-2 h-4 bg-green-400 animate-pulse"></span>
+            </div>
+          ) : player?.aiSuggestions ? (
+            <div className="text-green-400">
+              {player.aiSuggestions}
+            </div>
+          ) : (
+            <div className="text-green-400/50">
+              $ ready_for_analysis
+              <span className="animate-pulse bg-green-400 w-2 h-4 inline-block ml-1"></span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

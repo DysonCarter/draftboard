@@ -274,19 +274,19 @@ function DuringDraftPage({
         </div>
 
         {/* Right Side - Team Carousel and Player Card */}
-        <div className="w-1/2 bg-zinc-800 flex flex-col">
+        <div className="w-1/2 bg-zinc-800 flex flex-col h-screen">
           <TeamCarousel players={players} draftSettings={draftSettings} />
           
           {/* Player Card Section */}
           <div 
-            className="flex-1 flex items-start justify-center pt-2 px-4 pb-4 overflow-y-hidden"
+            className="flex-1 flex flex-col gap-3 p-4 overflow-y-auto min-h-0"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
           >
             {selectedPlayer ? (
-              <div className="flex flex-col gap-2 w-full">
-                {/* Row 2: Player card, Notes and AI Suggestions */}
-                <div className="flex gap-4 w-full max-w-4xl mx-auto">
+              <div className="flex flex-col gap-3 h-full">
+                {/* Top Row: Player card and Notes/AI side by side */}
+                <div className="flex gap-3 flex-shrink-0">
                   {/* Player card with 3D rotation */}
                   <div className="flex-shrink-0">
                     <div 
@@ -315,35 +315,37 @@ function DuringDraftPage({
                   </div>
 
                   {/* Notes and AI Suggestions Section */}
-                  <div className="flex-1 max-w-md space-y-4">
-                    {/* Notes Section - always visible */}
-                    <div className="bg-zinc-900 rounded-lg p-4 h-fit">
+                  <div className="flex-1 flex flex-col gap-3 min-w-0">
+                    {/* Notes Section */}
+                    <div className="bg-zinc-900 rounded-lg p-4 flex-shrink-0">
                       <div className="text-sm text-gray-400 mb-3 font-medium">PLAYER NOTES</div>
                       <textarea
                         value={selectedPlayer.notes || ''}
                         onChange={(e) => updatePlayerNotes(selectedPlayer.playerID, e.target.value)}
                         placeholder="Add your notes about this player..."
-                        className="w-full h-32 bg-zinc-800 text-white text-sm rounded p-3 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors"
+                        className="w-full h-24 bg-zinc-800 text-white text-sm rounded p-3 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none transition-colors"
                       />
                     </div>
 
                     {/* AI Suggestions Section */}
-                    <AiSuggestions 
-                      player={selectedPlayer} 
-                      updatePlayerAiSuggestions={updatePlayerAiSuggestions}
-                      availablePlayers={filteredPlayers.slice(0, 20)}
-                      draftedPlayers={players.filter(p => p.draftedByYou)}
-                      draftSettings={draftSettings}
-                      picksUntilNext={picksUntilNextForAI()}
-                      handlePlayerClick={handlePlayerClick}
-                    />
+                    <div className="flex-1 min-h-0">
+                      <AiSuggestions 
+                        player={selectedPlayer} 
+                        updatePlayerAiSuggestions={updatePlayerAiSuggestions}
+                        availablePlayers={filteredPlayers.slice(0, 20)}
+                        draftedPlayers={players.filter(p => p.draftedByYou)}
+                        draftSettings={draftSettings}
+                        picksUntilNext={picksUntilNextForAI()}
+                        handlePlayerClick={handlePlayerClick}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Row 3: Pick Countdown Box and future component */}
-                <div className="flex gap-4 w-full max-w-4xl mx-auto">
-                  <div className="w-32">
-                    <div className="bg-zinc-900 rounded-lg p-3 text-center h-32 flex flex-col justify-center">
+                {/* Bottom Row: Pick Countdown and Flip Display */}
+                <div className="flex gap-3 flex-shrink-0">
+                  <div className="w-32 flex-shrink-0">
+                    <div className="bg-zinc-900 rounded-lg p-3 text-center h-24 flex flex-col justify-center">
                       <div className="text-xs text-gray-400 mb-1 font-medium">NEXT PICK IN</div>
                       <div className="text-2xl font-bold text-white">
                         {picksUntilNext === 0 ? "NOW!" : picksUntilNext}
@@ -352,7 +354,7 @@ function DuringDraftPage({
                   </div>
                   
                   {/* Flip Display Component */}
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <FlipDisplay 
                       availablePlayers={filteredPlayers}
                       draftedPlayers={players.filter(p => p.draftedByYou)}

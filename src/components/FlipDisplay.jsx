@@ -63,7 +63,7 @@ function FlipDisplay({ availablePlayers, draftedPlayers, draftSettings, picksUnt
           return {
             title: "PROJECTED AVAILABLE",
             content: (
-              <div className="grid grid-cols-3 gap-1 text-lg font-bold w-full">
+              <div className="grid grid-cols-3 gap-1 text-xs font-bold w-full">
                 {projectedPlayers.map((player, index) => (
                   <div key={player.playerID} className="truncate">
                     {player.longName}
@@ -91,24 +91,24 @@ function FlipDisplay({ availablePlayers, draftedPlayers, draftSettings, picksUnt
         return {
           title: "ROSTER COUNT",
           content: (
-            <div className="grid grid-cols-3 gap-2 text-lg font-bold w-full">
+            <div className="grid grid-cols-3 gap-1 text-xs font-bold w-full">
               <div>
-                <span style={getPositionColorStyle('QB')} className="px-1 rounded text-lg">QB</span>: {positionCounts.QB}
+                <span style={getPositionColorStyle('QB')} className="px-1 rounded text-xs">QB</span>: {positionCounts.QB}
               </div>
               <div>
-                <span style={getPositionColorStyle('RB')} className="px-1 rounded text-lg">RB</span>: {positionCounts.RB}
+                <span style={getPositionColorStyle('RB')} className="px-1 rounded text-xs">RB</span>: {positionCounts.RB}
               </div>
               <div>
-                <span style={getPositionColorStyle('WR')} className="px-1 rounded text-lg">WR</span>: {positionCounts.WR}
+                <span style={getPositionColorStyle('WR')} className="px-1 rounded text-xs">WR</span>: {positionCounts.WR}
               </div>
               <div>
-                <span style={getPositionColorStyle('TE')} className="px-1 rounded text-lg">TE</span>: {positionCounts.TE}
+                <span style={getPositionColorStyle('TE')} className="px-1 rounded text-xs">TE</span>: {positionCounts.TE}
               </div>
               <div>
-                <span style={getPositionColorStyle('K')} className="px-1 rounded text-lg">K</span>: {positionCounts.K}
+                <span style={getPositionColorStyle('K')} className="px-1 rounded text-xs">K</span>: {positionCounts.K}
               </div>
               <div>
-                <span style={getPositionColorStyle('DST')} className="px-1 rounded text-lg">DST</span>: {positionCounts.DST}
+                <span style={getPositionColorStyle('DST')} className="px-1 rounded text-xs">DST</span>: {positionCounts.DST}
               </div>
             </div>
           )
@@ -129,15 +129,17 @@ function FlipDisplay({ availablePlayers, draftedPlayers, draftSettings, picksUnt
   const { title, content } = getDisplayContent();
 
   return (
-    <div className="bg-zinc-900 rounded-lg p-3 text-center h-32 flex flex-col justify-between">
-      <div className="text-xs text-gray-400 font-medium">{title}</div>
+    <div className="bg-zinc-900 rounded-lg p-3 text-center h-24 flex flex-col justify-between overflow-hidden">
+      <div className="text-xs text-gray-400 font-medium flex-shrink-0">{title}</div>
       <div 
-        className={`${typeof content === 'string' ? 'text-xl' : 'text-lg'} font-bold text-white transition-transform duration-500 leading-tight px-1 ${
+        className={`${typeof content === 'string' ? 'text-lg' : 'text-sm'} font-bold text-white transition-transform duration-500 leading-tight flex-1 flex items-center justify-center overflow-hidden ${
           isFlipping ? 'scale-y-0' : 'scale-y-100'
         }`}
         style={{ transformOrigin: 'center' }}
       >
-        {typeof content === 'string' ? content : content}
+        <div className="w-full overflow-hidden">
+          {typeof content === 'string' ? content : content}
+        </div>
       </div>
       <div></div> {/* Spacer for justify-between */}
     </div>
