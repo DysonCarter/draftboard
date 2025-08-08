@@ -57,20 +57,15 @@ Let lower ranks be better. Normalize ranks to z-ish scores against the *availabl
    - Otherwise exceptional = 0
 
 4) Star / thumbs-down
-   - starBonus = 0.10 if starred == true else 0
-   - thumbPenalty = -0.07 if thumbsDown == true else 0
+   - starBonus = 0.08 if starred; else 0
+   - thumbPenalty = -0.05 if thumbsDown; else 0
 
-5) Stack bonus (light but real)
-   - If player forms a meaningful stack with a *starting* teammate already on the user's roster:
-       - stackBonus = 0.08 (e.g., your QB ↔ their WR/TE; or your elite WR/TE ↔ their QB)
-   - Otherwise 0
-   - Only award once per player.
+5) Stacking (offense only)
+   - stackBonus = 0.06 if the player forms a same-team connection with someone already drafted, else 0
 
-6) Reach factor (picksUntilNext)
-   - Let reachAllowance = 0.5 * picksUntilNext (how many ranks it's reasonable to reach).
-   - If a player is starred AND their adpRank is within reachAllowance of the top available player's adpRank, add +0.05.
-   - If a player’s adpRank is much better (≥ 10 spots) than their customRank, add +0.03 (pure ADP faller).
-   - If a player’s customRank is much better (≥ 10 spots) than their adpRank and picksUntilNext ≥ 10, add +0.03 (get your guy before the long wait).
+6) Reaching (use picksUntilNext)
+   - reach = 0.02 * max(0, min(3, (picksUntilNext - 5))) for picksUntilNext >= 6; else 0
+   Rationale: users "reach" more if they know they have a long wait; but cap the effect.
 
 7) Positional sanity
    - If user lacks starters at RB/WR, add +0.05 to RB/WR candidates until both WR and RB starting slots are filled.
@@ -104,13 +99,8 @@ Let lower ranks be better. Normalize ranks to z-ish scores against the *availabl
       if (!player) return;
       
       setIsLoading(true);
-      console.log('AI Prompt:', PROMPT);
       
       try {
-        // Copy to clipboard first
-        await navigator.clipboard.writeText(PROMPT);
-        console.log('Prompt copied to clipboard!');
-        
         // Call our secure API endpoint
         const response = await fetch('/api/ai-suggestions', {
           method: 'POST',
@@ -129,42 +119,36 @@ Let lower ranks be better. Normalize ranks to z-ish scores against the *availabl
         const data = await response.json();
         const aiResponse = data.choices[0]?.message?.content;
         
-                  if (aiResponse) {
-            console.log('AI Response:', aiResponse);
+        if (aiResponse) {
+          // Try to parse JSON and extract the overview
+          try {
+            const parsedResponse = JSON.parse(aiResponse);
             
-            // Try to parse JSON and extract the overview
-            try {
-              const parsedResponse = JSON.parse(aiResponse);
+            // Find the recommended player first
+            let targetPlayer = player; // Default to current player
+            if (parsedResponse.longName) {
+              const recommendedPlayer = availablePlayers.find(p => 
+                p.longName.toLowerCase() === parsedResponse.longName.toLowerCase()
+              );
               
-              // Find the recommended player first
-              let targetPlayer = player; // Default to current player
-              if (parsedResponse.longName) {
-                const recommendedPlayer = availablePlayers.find(p => 
-                  p.longName.toLowerCase() === parsedResponse.longName.toLowerCase()
-                );
-                
-                if (recommendedPlayer) {
-                  targetPlayer = recommendedPlayer;
-                  console.log('Auto-selecting recommended player:', recommendedPlayer.longName);
-                  handlePlayerClick(recommendedPlayer);
-                } else {
-                  console.log('Recommended player not found in available players:', parsedResponse.longName);
-                }
+              if (recommendedPlayer) {
+                targetPlayer = recommendedPlayer;
+                handlePlayerClick(recommendedPlayer);
               }
-              
-              // Set the AI suggestions on the target player (recommended player if found)
-              if (parsedResponse.overview) {
-                updatePlayerAiSuggestions(targetPlayer.playerID, parsedResponse.overview);
-              } else {
-                // Fallback to raw response
-                updatePlayerAiSuggestions(targetPlayer.playerID, aiResponse);
-              }
-              
-            } catch (parseError) {
-              console.log('Could not parse JSON response, displaying raw text');
-              updatePlayerAiSuggestions(player.playerID, aiResponse);
             }
+            
+            // Set the AI suggestions on the target player (recommended player if found)
+            if (parsedResponse.overview) {
+              updatePlayerAiSuggestions(targetPlayer.playerID, parsedResponse.overview);
+            } else {
+              // Fallback to raw response
+              updatePlayerAiSuggestions(targetPlayer.playerID, aiResponse);
+            }
+            
+          } catch (parseError) {
+            updatePlayerAiSuggestions(player.playerID, aiResponse);
           }
+        }
       } catch (err) {
         console.error('Error calling OpenAI API:', err);
       } finally {
