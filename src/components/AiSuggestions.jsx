@@ -12,34 +12,92 @@ function AiSuggestions({
   const [isLoading, setIsLoading] = useState(false);
 
     const PROMPT = `
-    You are an elite fantasy-football draft assistant. 
-    Based on the following inputs, recommend exactly one player that maximizes the user's chances to win their league:
-        * adpRank: average draft position ranking
-        * customRank: user's personal ranking
-    
-    • Constraints & priorities:
-    DO NOT PUT ANY VALUE IN YOUR PERSONAL RANKING OR NAME. ONLY BASE THIS BASED ON THE STATS GIVEN TO YOU.
-      
-      2. Backup QB/TE aren't important unless there's exceptional value (falling well below ADP).
-      3. Favor "stack" opportunities:  
-         – If the user's starting QB has a top WR or TE available, bump that WR/TE's value.  
-         – Likewise, if the user has a top WR/TE, consider their QB.
-      4. Weigh both adpRank and customRank—seek value picks that the user also rates highly.
-      5. Consider user's notes and starred/thumbsDown preferences (a star means this is one of their guys they love, thumbs down they aren't a big fan but will draft if they are a good value).
-      6. Consider the picksUntilNext value, if their next pick is a lot later, they are more likely to reach and "get their guy"
-      7. The user needs exactly one Kicker and one Defense/Special Teams—don't draft a second of either.
-    
-    • Task:
-      Analyze the inputs and pick one player to draft now.  
-      Your output should be a json object in the shape of {"longName": "<player name>", "overview": "<two sentence overview of why to pick this player>"}
-      
-    • Data:
-      availablePlayers: ${JSON.stringify(availablePlayers)}
-      draftedPlayers: ${JSON.stringify(draftedPlayers)}  
-      draftSettings: ${JSON.stringify(draftSettings)}
-      picksUntilNext: ${picksUntilNext}
+    You are an elite fantasy-football draft assistant.
 
-      RETURN ONLY THE JSON OBJECT, NO OTHER TEXT, NO MARKDOWN FORMATTING
+## Goal
+From the inputs, recommend EXACTLY ONE player who maximizes the user's chance to win their league.
+
+## Hard rules (must follow)
+1) Use ONLY the provided data fields. Do not add outside knowledge or your own rankings.
+2) "Rank 1" is best. Lower numbers = better.
+3) Do NOT draft a second K or DST. If the roster already has a K or DST, set that position's score to -∞.
+4) Backup QB/TE are unimportant unless the player is an exceptional value (clearly falling past ADP).
+5) Output MUST be valid JSON ONLY, with shape:
+   {"longName": "<player name>", "overview": "<two sentence overview of why to pick this player>"}
+   - Exactly two sentences in "overview".
+   - No extra fields, no markdown, no commentary.
+
+## Inputs
+availablePlayers: ${JSON.stringify(availablePlayers)}
+draftedPlayers: ${JSON.stringify(draftedPlayers)}
+draftSettings: ${JSON.stringify(draftSettings)}
+picksUntilNext: ${picksUntilNext}
+
+## Field expectations
+Each available player may include: 
+- longName, position, team, adpRank (integer), customRank (integer), starred (boolean), thumbsDown (boolean), notes (string|optional), stackWith (array of teammate names or positions, e.g., ["Josh Allen","BUF QB","Mark Andrews"])
+- Not all fields are guaranteed. Treat missing booleans as false, missing arrays as empty.
+
+draftedPlayers includes the user's roster so far (use this to detect stacks and whether K/DST are already filled).
+
+## Scoring recipe (compute a single score per player; pick the max)
+Let lower ranks be better. Normalize ranks to z-ish scores against the *available* pool so the model compares like with like:
+
+1) Rank components
+   - adpComponent = percentile rank among available based on adpRank (invert so better ADP → higher number in [0,1])
+   - customComponent = percentile rank among available based on customRank (invert so better custom → higher number in [0,1])
+
+2) Base value
+   - base = (0.55 * customComponent) + (0.35 * adpComponent)
+   Rationale: respect the user's board while still hunting ADP value.
+
+3) Exceptional value bump (for QB/TE backups only)
+   - If position in {"QB","TE"} AND user already has that position filled:
+       - exceptional = 0.15 if the player's adpRank is at least 12 spots better than the median adpRank of remaining players at that position; else 0
+   - Otherwise exceptional = 0
+
+4) Star / thumbs-down
+   - starBonus = 0.10 if starred == true else 0
+   - thumbPenalty = -0.07 if thumbsDown == true else 0
+
+5) Stack bonus (light but real)
+   - If player forms a meaningful stack with a *starting* teammate already on the user's roster:
+       - stackBonus = 0.08 (e.g., your QB ↔ their WR/TE; or your elite WR/TE ↔ their QB)
+   - Otherwise 0
+   - Only award once per player.
+
+6) Reach factor (picksUntilNext)
+   - Let reachAllowance = 0.5 * picksUntilNext (how many ranks it's reasonable to reach).
+   - If a player is starred AND their adpRank is within reachAllowance of the top available player's adpRank, add +0.05.
+   - If a player’s adpRank is much better (≥ 10 spots) than their customRank, add +0.03 (pure ADP faller).
+   - If a player’s customRank is much better (≥ 10 spots) than their adpRank and picksUntilNext ≥ 10, add +0.03 (get your guy before the long wait).
+
+7) Positional sanity
+   - If user lacks starters at RB/WR, add +0.05 to RB/WR candidates until both WR and RB starting slots are filled.
+   - If position is K or DST and the roster slot is still empty, allow normal scoring; if filled, score = -∞ (skip).
+
+8) Final score
+   - score = base + exceptional + starBonus + thumbPenalty + stackBonus + reach adjustments + positional sanity
+   - If any mandatory constraint is violated (e.g., second K/DST), set score = -∞.
+
+## Tiebreakers (in order; apply until one player wins)
+1) Higher customComponent
+2) Higher adpComponent (more ADP value)
+3) Player who creates/strengthens a stack
+4) Starred over non-starred
+5) Scarcer starting need (fill RB/WR starters first)
+6) Lower adpRank (comes off the board sooner)
+
+## Output construction
+- Choose the single highest-scoring eligible player.
+- DO NOT WRAP IN MARKDOWN CODE BLOCKS. GIVE PLAIN TEXT JSON
+- Return ONLY:
+  {"longName": "<player name>", "overview": "<two sentence overview of why to pick this player>"}
+- The overview MUST reference value and at least one of: user preference (star/thumbsDown handled), stack, or picksUntilNext logic—WITHOUT inventing new stats.
+
+## Safety checks
+- If no eligible players exist (should be rare), pick the best non-K/DST by base and explain the constraint in the two sentences without breaking the format.
+- Never include rankings, scores, or internal calculations in the JSON—only the two-sentence rationale.
     `;
 
     const handleGenerateAI = async () => {
